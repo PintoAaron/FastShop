@@ -29,16 +29,21 @@ def login_keycloak_user(email,password):
     url = f"{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}/protocol/openid-connect/token"
     try:
         response = requests.post(url, data=keycloak_login_data)
-        print(response.json)
         return response.json()
     except Exception as e:
-        print(e)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Invalid credentials")
 
 
 
 admin_token = login_keycloak_user(KEYCLOAK_ADMIN_EMAIL, KEYCLOAK_ADMIN_PASSWORD)
-print(admin_token)
+expire_date = datetime.now() + timedelta(seconds=admin_token.get('expires_in'))
+
+
+def get_new_admin_token(admin_token = admin_token, expire_date = expire_date):
+    if datetime.now() > expire_date:
+        admin_token = login_keycloak_user(KEYCLOAK_ADMIN_EMAIL, KEYCLOAK_ADMIN_PASSWORD)
+        expire_date = datetime.now() + timedelta(seconds=admin_token.get("expires_in"))
+    return admin_token
 
 
 def register_keycloak_user(user_data):
@@ -59,6 +64,8 @@ def register_keycloak_user(user_data):
             "db_id": str(user_data.id)  
         }
     }
+    
+    admin_token = get_new_admin_token()
     headers = {
         "Authorization": f"Bearer {admin_token.get('access_token')}",
         "Content-Type": "application/json"
@@ -68,7 +75,6 @@ def register_keycloak_user(user_data):
         response = requests.post(url, json=keycloak_register_data, headers=headers)
         return response.status_code
     except Exception as e:
-        print(e)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Invalid credentials")
     
     
