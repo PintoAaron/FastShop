@@ -2,15 +2,18 @@ from pydantic import BaseModel, EmailStr
 
 
 class CustomerIn(BaseModel):
-    full_name: str
-    password: str
+    first_name: str
+    last_name: str
+    password: str 
     email: EmailStr
-    phone: str
+    phone: str = None
 
+class CustomerLogin(BaseModel):
+    email: EmailStr
+    password: str
 
 class CustomerOut(BaseModel):
     id: int
-    full_name: str
     email: EmailStr
 
 
