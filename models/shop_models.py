@@ -16,7 +16,7 @@ class Customer(Base):
     first_name = Column(String, nullable=False)
     last_name = Column(String, nullable=False)
     password = Column(String, nullable=False)
-    email = Column(String, nullable=False)
+    email = Column(String, nullable=False,unique=True)
     phone = Column(String)
     membership = Column(Enum('Gold', 'Silver', 'Bronze',name= 'membership_type'),default='Bronze')
 
