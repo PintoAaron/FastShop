@@ -1,4 +1,5 @@
 from fastapi import HTTPException,status
+from jose import jwt,JWTError
 import requests 
 import os 
 from dotenv import load_dotenv
@@ -16,6 +17,8 @@ KEYCLOAK_ADMIN = os.getenv("KEYCLOAK_ADMIN")
 KEYCLOAK_ADMIN_EMAIL = os.getenv("KEYCLOAK_ADMIN_EMAIL")
 KEYCLOAK_ADMIN_PASSWORD = os.getenv("KEYCLOAK_ADMIN_PASSWORD")
 PUBLIC_KEY = os.getenv("PUBLIC_KEY")
+AUDIENCE = os.getenv("AUDIENCE")
+ALGORITHM = os.getenv("ALGORITHM")
 
 
 def login_keycloak_user(email,password):
@@ -76,5 +79,18 @@ def register_keycloak_user(user_data,db_id):
         return response.status_code
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Invalid credentials")
+    
+    
+    
+    
+DECODE_KEY= "-----BEGIN PUBLIC KEY-----\n" + PUBLIC_KEY + "\n-----END PUBLIC KEY-----"
+def verify_token(token):
+    try:
+        payload = jwt.decode(token, key=DECODE_KEY, audience=AUDIENCE, algorithms=[ALGORITHM])
+        print(payload)
+        return payload
+    except JWTError as e:
+        print(e)
+        raise HTTPException(status_code=401, detail=str(e))
     
     

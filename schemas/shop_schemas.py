@@ -35,3 +35,14 @@ class CollectionIn(BaseModel):
     title: str
 
 
+
+class OrderIn(BaseModel):
+    customer_id: int
+
+
+
+class OrderOut(BaseModel):
+    id: int
+    customer_id: int
+    placed_at: str
+    payment_status: str
