@@ -17,15 +17,19 @@ router = APIRouter(
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 async def create_customer(customer: CustomerIn, db: Session = Depends(get_db)):
     hashed_password = get_password_hash(customer.password)
-    customer.password = hashed_password
     try:
-        new_user = Customer(**customer.dict())
+        new_user = Customer(
+            first_name=customer.first_name,
+            last_name=customer.last_name,
+            email=customer.email,
+            password=hashed_password
+        )
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail="Email already exists")
-    if register_keycloak_user(new_user) != 201:
+    if register_keycloak_user(customer,new_user.id) != 201:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail="Keycloak registration failed")
     token = login_keycloak_user(customer.email, customer.password)
     return {"token":token}

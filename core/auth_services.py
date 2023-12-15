@@ -46,7 +46,7 @@ def get_new_admin_token(admin_token = admin_token, expire_date = expire_date):
     return admin_token
 
 
-def register_keycloak_user(user_data):
+def register_keycloak_user(user_data,db_id):
     keycloak_register_data = {
         "username": user_data.first_name[0] + user_data.last_name,
         "firstName": user_data.first_name,
@@ -61,7 +61,7 @@ def register_keycloak_user(user_data):
             }
         ],
         "attributes": {
-            "db_id": str(user_data.id)  
+            "db_id": str(db_id)  
         }
     }
     
