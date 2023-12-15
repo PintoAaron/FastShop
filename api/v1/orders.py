@@ -2,7 +2,7 @@ from fastapi import APIRouter,Depends,HTTPException,status,Header
 from sqlalchemy.orm import Session
 from typing import List,Dict
 from models.shop_models import Order
-from schemas.shop_schemas import OrderIn,OrderOut
+from schemas.shop_schemas import OrderOut
 from core.db import get_db
 from core.auth_services import verify_token
 
@@ -16,7 +16,10 @@ router = APIRouter(
 @router.get("/",response_model=Dict[str,List[OrderOut]],status_code=status.HTTP_200_OK)
 async def get_all_orders(db:Session=Depends(get_db),token=Header(...)):
     payload = verify_token(token)
-    if payload.get("resource_access").get("realm-management").get("roles")[4] != "realm-admin":
+    try:
+        if payload.get("resource_access").get("realm-management").get("roles")[4] != "realm-admin":
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Unauthorized access")
+    except AttributeError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Unauthorized access")
     orders = db.query(Order).all()
     return {"data":orders}
@@ -26,9 +29,24 @@ async def get_all_orders(db:Session=Depends(get_db),token=Header(...)):
 @router.get("/{order_id}",response_model=Dict[str,OrderOut],status_code=status.HTTP_200_OK)
 async def get_order(order_id:int,db:Session=Depends(get_db),token=Header(...)):
     payload = verify_token(token)
-    if payload.get("resource_access").get("realm-management").get("roles")[4] != "realm-admin":
+    try:
+        if payload.get("resource_access").get("realm-management").get("roles")[4] != "realm-admin":
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Unauthorized access")
+    except AttributeError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Unauthorized access")
     order = db.query(Order).filter(Order.id==order_id).first()
     if not order:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="order not found")
+    return {"data":order}
+
+
+
+@router.post("/",status_code=status.HTTP_201_CREATED)
+async def create_order(db:Session=Depends(get_db),token=Header(...)):
+    payload = verify_token(token)
+    user_id= payload.get("user_id")
+    order = Order(customer_id=int(user_id))
+    db.add(order)
+    db.commit()
+    db.refresh(order)
     return {"data":order}

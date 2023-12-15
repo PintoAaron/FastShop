@@ -37,11 +37,6 @@ class CollectionIn(BaseModel):
 
 
 
-class OrderIn(BaseModel):
-    customer_id: int
-
-
-
 class OrderOut(BaseModel):
     id: int
     customer_id: int
