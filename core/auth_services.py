@@ -87,10 +87,8 @@ DECODE_KEY= "-----BEGIN PUBLIC KEY-----\n" + PUBLIC_KEY + "\n-----END PUBLIC KEY
 def verify_token(token):
     try:
         payload = jwt.decode(token, key=DECODE_KEY, audience=AUDIENCE, algorithms=[ALGORITHM])
-        print(payload)
         return payload
     except JWTError as e:
-        print(e)
         raise HTTPException(status_code=401, detail=str(e))
     
     

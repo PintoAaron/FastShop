@@ -16,7 +16,7 @@ router = APIRouter(
 @router.get("/",response_model=Dict[str,List[OrderOut]],status_code=status.HTTP_200_OK)
 async def get_all_orders(db:Session=Depends(get_db),token=Header(...)):
     payload = verify_token(token)
-    if payload.get("sub") != "admin":
+    if payload.get("resource_access").get("realm-management").get("roles")[4] != "realm-admin":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Unauthorized access")
     orders = db.query(Order).all()
     return {"data":orders}
@@ -26,7 +26,7 @@ async def get_all_orders(db:Session=Depends(get_db),token=Header(...)):
 @router.get("/{order_id}",response_model=Dict[str,OrderOut],status_code=status.HTTP_200_OK)
 async def get_order(order_id:int,db:Session=Depends(get_db),token=Header(...)):
     payload = verify_token(token)
-    if payload.get("sub") != "admin":
+    if payload.get("resource_access").get("realm-management").get("roles")[4] != "realm-admin":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Unauthorized access")
     order = db.query(Order).filter(Order.id==order_id).first()
     if not order:

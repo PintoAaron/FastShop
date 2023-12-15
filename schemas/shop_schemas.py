@@ -26,6 +26,7 @@ class ProductIn(BaseModel):
 
 
 class ProductOut(BaseModel):
+    id: int
     name: str
     unit_price: float
     inventory: int
