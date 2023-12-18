@@ -36,18 +36,39 @@ def login_keycloak_user(email,password):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Invalid credentials")
 
-
-
 admin_token = login_keycloak_user(KEYCLOAK_ADMIN_EMAIL, KEYCLOAK_ADMIN_PASSWORD)
-expire_date = datetime.now() + timedelta(seconds=admin_token.get('expires_in'))
+access_token_expire_date = datetime.now() + timedelta(seconds=admin_token.get('expires_in'))
+refresh_token_expire_date = datetime.now() + timedelta(seconds=admin_token.get('refresh_expires_in'))
+
+def refresh_user_token():
+    keycloak_login_data = {
+        'grant_type': 'refresh_token',
+        'client_id': KEYCLOAK_CLIENT,
+        'client_secret': KEYCLOAK_CLIENT_SECRET,
+        'refresh_token': admin_token.get('refresh_token'),
+    }
+    url = f"{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}/protocol/openid-connect/token"
+    try:
+        response = requests.post(url, data=keycloak_login_data)
+        return response.json()
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Invalid credentials")
 
 
-def get_new_admin_token(admin_token = admin_token, expire_date = expire_date):
-    if datetime.now() > expire_date:
-        admin_token = login_keycloak_user(KEYCLOAK_ADMIN_EMAIL, KEYCLOAK_ADMIN_PASSWORD)
-        expire_date = datetime.now() + timedelta(seconds=admin_token.get("expires_in"))
+
+
+def refresh_or_get_new_admin_token():
+    global admin_token, access_token_expire_date,refresh_token_expire_date
+    if datetime.now() > access_token_expire_date:
+        if datetime.now() > refresh_token_expire_date:
+            admin_token = login_keycloak_user(KEYCLOAK_ADMIN_EMAIL, KEYCLOAK_ADMIN_PASSWORD)
+            access_token_expire_date = datetime.now() + timedelta(seconds=admin_token.get('expires_in'))
+            refresh_token_expire_date = datetime.now() + timedelta(seconds=admin_token.get('refresh_expires_in'))
+        else:
+            admin_token = refresh_user_token()
+            access_token_expire_date = datetime.now() + timedelta(seconds=admin_token.get('expires_in'))
+            refresh_token_expire_date = datetime.now() + timedelta(seconds=admin_token.get('refresh_expires_in'))
     return admin_token
-
 
 def register_keycloak_user(user_data,db_id):
     keycloak_register_data = {
@@ -68,7 +89,7 @@ def register_keycloak_user(user_data,db_id):
         }
     }
     
-    admin_token = get_new_admin_token()
+    admin_token = refresh_or_get_new_admin_token()
     headers = {
         "Authorization": f"Bearer {admin_token.get('access_token')}",
         "Content-Type": "application/json"
